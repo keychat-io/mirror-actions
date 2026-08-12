@@ -1,0 +1,34 @@
+name: Mirror GitLab Bark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mirror GitLab master to GitHub main
+        env:
+          BARK_TOKEN: ${{ secrets.BARK }}
+        run: |
+          set -euo pipefail
+
+          rm -rf bark.git
+
+          git clone --bare https://gitlab.com/ark-bitcoin/bark.git bark.git
+          cd bark.git
+
+          GITHUB_REPO="https://x-access-token:${BARK_TOKEN}@github.com/keychat-io/bark.git"
+
+          echo "Syncing GitLab master -> GitHub main..."
+          git push --force \
+            "$GITHUB_REPO" \
+            refs/heads/master:refs/heads/main
+
+          echo "Syncing tags..."
+          git push --force --tags "$GITHUB_REPO"
+
+          echo "Mirror completed successfully."
